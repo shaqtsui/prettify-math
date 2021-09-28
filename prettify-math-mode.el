@@ -1,4 +1,4 @@
-;;; mathjax-mode.el --- prettify math formula  -*- lexical-binding: t -*-
+;;; prettify-math-mode.el --- prettify math formula  -*- lexical-binding: t -*-
 ;;; Commentary:
 ;;; Code:
 (require 'jsonrpc)
@@ -40,45 +40,38 @@
         (remove-text-properties s e '(focus-on))
         (font-lock-flush s e)))))
 
-;; point is dangerous to use, as don't know which code is using it
-;; nil returned
-(defun dummy-face-fn ()
+
+;; unfontify before fontify?
+;; face only specified when its value non-nil
+(defun facespec-fn ()
   (let* ((start (match-beginning 0))
-         (end (match-end 0))
          (mathexp (match-string 1)))
-    (with-silent-modifications
-      (if (get-text-property start 'focus-on)
-          (remove-text-properties start end '(display))
-        (setq cursor-sensor-inhibit nil)
-        (cursor-sensor-mode 1)
-        (setq pre-redisplay-functions (delq 'cursor-sensor--detect pre-redisplay-functions))
-        (add-text-properties start end `(display ((image . (:type svg
-                                                                  :data ,(mathexp-to-svg mathexp)
-                                                                  :scale 1.8))
-                                                  (raise 0.4))
-                                                 cursor-sensor-functions (update-focus-on)
-                                                 rear-nonsticky (cursor-sensor-functions))))))
-  nil)
+    (if (get-text-property start 'focus-on)
+        `(face nil cursor-sensor-functions (update-focus-on)
+               rear-nonsticky (cursor-sensor-functions))
+      `(face nil display ((image . (:type svg
+                                          :data ,(mathexp-to-svg mathexp)
+                                          :scale 1.8))
+                          (raise 0.4))
+             cursor-sensor-functions (update-focus-on)
+             rear-nonsticky (cursor-sensor-functions)))))
 
 
 ;; syntax class is mostly exclusive
 ;; but $ may be used both as word & delimiter
 ;; so only keyword is suitble here
 ;; display.image is dyna computed for each content
-;;
-;; HACK!!! following prettify symbols
-;; 2 effects:
-;; (dummy-face-fn) result as value of face
-;; (dummy-face-fn) side effects
-;; a bug here, as should NOT change it's face value
 (defun register-in-font-lock ()
+  (setq cursor-sensor-inhibit nil)
+  (cursor-sensor-mode 1)
+  (setq pre-redisplay-functions (delq 'cursor-sensor--detect pre-redisplay-functions))
   (font-lock-add-keywords nil
-                          `((,(delimiter-to-regexp default-delimiter) 0 (dummy-face-fn))))
+                          `((,(delimiter-to-regexp default-delimiter) 0 (facespec-fn))))
   (--> '(display cursor-sensor-functions rear-nonsticky)
        (append it font-lock-extra-managed-props)
        (setq font-lock-extra-managed-props it)))
 
 (register-in-font-lock)
 
-(provide 'mathjax-mode)
-;;; mathjax-mode.el ends here
+(provide 'prettify-math-mode)
+;;; prettify-math-mode.el ends here
