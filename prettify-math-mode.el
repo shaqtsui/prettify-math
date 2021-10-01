@@ -3,7 +3,16 @@
 ;;; Code:
 (require 'jsonrpc)
 (require 'dash)
-(fset 'mathexp-to-svg (let* ((mjserver (make-process :name "mjserver"
+
+(defconst pkg-base (if load-file-name (file-name-directory load-file-name) "./"))
+(setq default-directory (expand-file-name pkg-base))
+
+(defun init-mathjax ()
+  (unless (file-exists-p (expand-file-name "package-lock.json" pkg-base))
+    (call-process "npm" nil "*init-mathjax*" nil "install")))
+
+(fset 'mathexp-to-svg (let* ((_ (init-mathjax))
+                             (mjserver (make-process :name "mjserver"
                                                      :buffer "mjserver"
                                                      :command '("node" "mathjax-jsonrpc.js")
                                                      :connection-type 'pipe
@@ -94,7 +103,7 @@
   (setq font-lock-extra-managed-props (--remove (memq it extra-properties)
                                                 font-lock-extra-managed-props)))
 
-
+;;;###autoload
 (define-minor-mode prettify-math-mode
   "prettify math mode base on font lock"
   :lighter " pmath"

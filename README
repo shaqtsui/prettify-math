@@ -1,0 +1,4 @@
+Prettify math is a minor mode, follow same logic as prettify-symbol-mode
+It's base on mathjax, so node enviroment is required
+currently it support asciimath and tex math
+
