@@ -1,5 +1,12 @@
 ;;; prettify-math-mode.el --- prettify math formula  -*- lexical-binding: t -*-
+
+;; Copyright: GPL
+
+;; Author: Fucheng Xu <xfcjscn@163.com>
+
 ;;; Commentary:
+;; this long desc is not used
+
 ;;; Code:
 (require 'jsonrpc)
 (require 'dash)
