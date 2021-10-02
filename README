@@ -1,4 +1,25 @@
-Prettify math is a minor mode, follow same logic as prettify-symbol-mode
-It's base on mathjax, so node enviroment is required
-currently it support asciimath and tex math
+Prettify math is a emacs minor mode to prettify math formulas.
+
+It's base on mathjax, refer mathjax for math formula related
+stuffes. Default math formula delimiters: $$ -> tex math, ` ->
+asciimath.
+
+Prerequire
+  nodejs - used to run mathjax, simple installation refer:
+    https://nodejs.dev/download/package-manager
+
+Installation
+  install `prettify-math-mode` from melpa
+
+Usage
+  enable prettify-math-mode in your buffer, or globally via
+  global-prettify-math-mode.
+
+Customization
+  You can customize delimiter before this module loaded.
+  Code example in init.el:
+  (setq prettify-math-mode-delimiters-alist '(("$$" . tex)
+    ("$" . tex)
+    ("``" . asciimath)))
+  (require 'prettify-math-mode)
 
