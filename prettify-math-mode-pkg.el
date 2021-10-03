@@ -6,4 +6,4 @@
   '("Fucheng Xu" . "xfcjscn@163.com")
   :keywords
   '("math" "asciimath" "tex" "latex" "2-d" "mathjax" "prettify")
-  :url "https://gitee.com/xfcjscn")
+  :url "https://gitee.com/xfcjscn/prettify-math-mode")

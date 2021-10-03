@@ -1,13 +1,58 @@
-;;; prettify-math-mode.el --- prettify math formula  -*- lexical-binding: t -*-
-
-;; Copyright: GPL
+;;; prettify-math-mode.el --- Prettify math formula -*- lexical-binding: t -*-
 
 ;; Author: Fucheng Xu <xfcjscn@163.com>
+;; Maintainer: Fucheng Xu <xfcjscn@163.com>
+;; Version: 0.1
+;; Package-Requires: ((emacs "25.1") (dash "2.19.0") (jsonrpc "1.0.9"))
+;; Homepage: https://gitee.com/xfcjscn/prettify-math-mode
+;; Keywords: math asciimath tex latex prettify 2-d mathjax
+
+
+;; This file is not part of GNU Emacs
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 
 ;;; Commentary:
-;; this long desc is not used
+
+;; Prettify math is a EMACS minor mode to prettify math formulas.
+;;
+;; It's base on mathjax, refer mathjax for math formula related
+;; stuffes.  Default math formula delimiters: $$ -> tex math, ` ->
+;; asciimath.
+;;
+;; Prerequire
+;;   nodejs - used to run mathjax, simple installation refer:
+;;     https://nodejs.dev/download/package-manager
+;;
+;; Installation
+;;   install `prettify-math-mode` from melpa
+;;
+;; Usage
+;;   enable prettify-math-mode in your buffer, or globally via
+;;   global-prettify-math-mode.
+;;
+;; Customization
+;;   You can customize delimiter before this module loaded.
+;;   Code example in init.el:
+;;   (setq prettify-math-mode-delimiters-alist '(("$$" . tex)
+;;     ("$" . tex)
+;;     ("``" . asciimath)))
+;;   (require 'prettify-math-mode)
 
 ;;; Code:
+
 (require 'jsonrpc)
 (require 'dash)
 
@@ -15,6 +60,7 @@
 (setq default-directory (expand-file-name prettify-math-mode--pkg-base))
 
 (defun prettify-math-mode--init-mathjax ()
+  "Install mathjax dependencies."
   (unless (file-exists-p (expand-file-name "package-lock.json" prettify-math-mode--pkg-base))
     (call-process "npm" nil "*init-mathjax*" nil "install")))
 
@@ -43,6 +89,7 @@
     ("`" . asciimath)))
 
 (defun prettify-math-mode--delimiter-to-regexp (delimiter)
+  "Regexp for expression inside DELIMITER."
   (let* ((dlmt-beginning (cond ((consp delimiter) (car delimiter))
                                ((atom delimiter) delimiter)))
          (dlmt-end (cond ((consp delimiter) (cdr delimiter))
@@ -57,6 +104,8 @@
 
 
 (defun prettify-math-mode--update-focus-on (_ old-pos action)
+  "Update text property focus-on.
+Base on OLD-POS to calculate texts when ACTION is entered, otherwise on point."
   (with-silent-modifications
     (if (eq action 'entered)
         (let ((s (previous-single-property-change (1+ (point)) 'display nil (point-min)))
@@ -69,9 +118,11 @@
         (font-lock-flush s e)))))
 
 
-;; unfontify before fontify?
-;; face only specified when its value non-nil
+
 (defun prettify-math-mode--facespec-fn ()
+  "Property face only specified when its value non-nil.
+display.image is dyna computed for each content.
+Unfontify before fontify?"
   (let* ((start (match-beginning 0))
          (dlmt (match-string 1))
          (mathexp (match-string 2)))
@@ -94,11 +145,10 @@
 (defvar prettify-math-mode--extra-properties
   '(display cursor-sensor-functions rear-nonsticky))
 
-;; syntax class is mostly exclusive
-;; but $ may be used both as word & delimiter
-;; so only keyword is suitble here
-;; display.image is dyna computed for each content
+
 (defun prettify-math-mode--register-in-font-lock ()
+  "Only keyword is suitble here.
+As syntax class is mostly exclusive."
   (cursor-sensor-mode 1)
   (setq pre-redisplay-functions (delq 'cursor-sensor--detect pre-redisplay-functions))
   (font-lock-add-keywords nil prettify-math-mode--keywords)
@@ -107,6 +157,7 @@
        (setq font-lock-extra-managed-props it)))
 
 (defun prettify-math-mode--unregister-in-font-lock ()
+  "Remove keywords."
   (cursor-sensor-mode -1)
   (font-lock-remove-keywords nil prettify-math-mode--keywords)
   (setq font-lock-extra-managed-props (--remove (memq it prettify-math-mode--extra-properties)
@@ -131,4 +182,5 @@
   prettify-math-mode)
 
 (provide 'prettify-math-mode)
+
 ;;; prettify-math-mode.el ends here
