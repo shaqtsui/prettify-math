@@ -3,3 +3,4 @@ node_modules
 .cask
 package-lock.json
 *-pkg.el
+dist
