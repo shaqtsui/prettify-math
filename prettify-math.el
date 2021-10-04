@@ -1,10 +1,10 @@
-;;; prettify-math-mode.el --- Prettify math formula -*- lexical-binding: t -*-
+;;; prettify-math.el --- Prettify math formula -*- lexical-binding: t -*-
 
 ;; Author: Fucheng Xu <xfcjscn@163.com>
 ;; Maintainer: Fucheng Xu <xfcjscn@163.com>
 ;; Version: 0.1
 ;; Package-Requires: ((emacs "25.1") (dash "2.19.0") (jsonrpc "1.0.9"))
-;; Homepage: https://gitee.com/xfcjscn/prettify-math-mode
+;; Homepage: https://gitee.com/xfcjscn/prettify-math
 ;; Keywords: math asciimath tex latex prettify 2-d mathjax
 
 
@@ -37,7 +37,7 @@
 ;;     https://nodejs.dev/download/package-manager
 ;;
 ;; Installation
-;;   install `prettify-math-mode` from melpa
+;;   install `prettify-math` from melpa
 ;;
 ;; Usage
 ;;   enable prettify-math-mode in your buffer, or globally via
@@ -46,26 +46,26 @@
 ;; Customization
 ;;   You can customize delimiter before this module loaded.
 ;;   Code example in init.el:
-;;   (setq prettify-math-mode-delimiters-alist '(("$$" . tex)
+;;   (setq prettify-math-delimiters-alist '(("$$" . tex)
 ;;     ("$" . tex)
 ;;     ("``" . asciimath)))
-;;   (require 'prettify-math-mode)
+;;   (require 'prettify-math)
 
 ;;; Code:
 
 (require 'jsonrpc)
 (require 'dash)
 
-(defconst prettify-math-mode--pkg-base (if load-file-name (file-name-directory load-file-name) "./"))
-(setq default-directory (expand-file-name prettify-math-mode--pkg-base))
+(defconst prettify-math--pkg-base (if load-file-name (file-name-directory load-file-name) "./"))
+(setq default-directory (expand-file-name prettify-math--pkg-base))
 
-(defun prettify-math-mode--init-mathjax ()
+(defun prettify-math--init-mathjax ()
   "Install mathjax dependencies."
-  (unless (file-exists-p (expand-file-name "package-lock.json" prettify-math-mode--pkg-base))
+  (unless (file-exists-p (expand-file-name "package-lock.json" prettify-math--pkg-base))
     (call-process "npm" nil "*init-mathjax*" nil "install")))
 
-(declare-function prettify-math-mode--mathexp-to-svg "prettify-math-mode" t t)
-(fset 'prettify-math-mode--mathexp-to-svg (let* ((_ (prettify-math-mode--init-mathjax))
+(declare-function prettify-math--mathexp-to-svg "prettify-math" t t)
+(fset 'prettify-math--mathexp-to-svg (let* ((_ (prettify-math--init-mathjax))
                              (mjserver (make-process :name "mjserver"
                                                      :buffer "mjserver"
                                                      :command '("node" "mathjax-jsonrpc.js")
@@ -84,11 +84,11 @@
                                            exp))))
 
 ;; can't use customize, as init depdent on it
-(defvar prettify-math-mode-delimiters-alist
+(defvar prettify-math-delimiters-alist
   '(("$$" . tex)
     ("`" . asciimath)))
 
-(defun prettify-math-mode--delimiter-to-regexp (delimiter)
+(defun prettify-math--delimiter-to-regexp (delimiter)
   "Regexp for expression inside DELIMITER."
   (let* ((dlmt-beginning (cond ((consp delimiter) (car delimiter))
                                ((atom delimiter) delimiter)))
@@ -103,7 +103,7 @@
             (regexp-quote dlmt-end))))
 
 
-(defun prettify-math-mode--update-focus-on (_ old-pos action)
+(defun prettify-math--update-focus-on (_ old-pos action)
   "Update text property focus-on.
 Base on OLD-POS to calculate texts when ACTION is entered, otherwise on point."
   (with-silent-modifications
@@ -119,7 +119,7 @@ Base on OLD-POS to calculate texts when ACTION is entered, otherwise on point."
 
 
 
-(defun prettify-math-mode--facespec-fn ()
+(defun prettify-math--facespec-fn ()
   "Property face only specified when its value non-nil.
 display.image is dyna computed for each content.
 Unfontify before fontify?"
@@ -127,40 +127,40 @@ Unfontify before fontify?"
          (dlmt (match-string 1))
          (mathexp (match-string 2)))
     (if (get-text-property start 'focus-on)
-        `(face nil cursor-sensor-functions (prettify-math-mode--update-focus-on)
+        `(face nil cursor-sensor-functions (prettify-math--update-focus-on)
                rear-nonsticky (cursor-sensor-functions))
       `(face nil display ((image . (:type svg
-                                          :data ,(prettify-math-mode--mathexp-to-svg mathexp (assoc-default dlmt prettify-math-mode-delimiters-alist))
+                                          :data ,(prettify-math--mathexp-to-svg mathexp (assoc-default dlmt prettify-math-delimiters-alist))
                                           :scale 1.8))
                           (raise 0.4))
-             cursor-sensor-functions (prettify-math-mode--update-focus-on)
+             cursor-sensor-functions (prettify-math--update-focus-on)
              rear-nonsticky (cursor-sensor-functions)))))
 
-(defvar prettify-math-mode--keywords
-  (--map (list (prettify-math-mode--delimiter-to-regexp (car it))
+(defvar prettify-math--keywords
+  (--map (list (prettify-math--delimiter-to-regexp (car it))
                0
-               '(prettify-math-mode--facespec-fn))
-         prettify-math-mode-delimiters-alist))
+               '(prettify-math--facespec-fn))
+         prettify-math-delimiters-alist))
 
-(defvar prettify-math-mode--extra-properties
+(defvar prettify-math--extra-properties
   '(display cursor-sensor-functions rear-nonsticky))
 
 
-(defun prettify-math-mode--register-in-font-lock ()
+(defun prettify-math--register-in-font-lock ()
   "Only keyword is suitble here.
 As syntax class is mostly exclusive."
   (cursor-sensor-mode 1)
   (setq pre-redisplay-functions (delq 'cursor-sensor--detect pre-redisplay-functions))
-  (font-lock-add-keywords nil prettify-math-mode--keywords)
-  (--> prettify-math-mode--extra-properties
+  (font-lock-add-keywords nil prettify-math--keywords)
+  (--> prettify-math--extra-properties
        (append it font-lock-extra-managed-props)
        (setq font-lock-extra-managed-props it)))
 
-(defun prettify-math-mode--unregister-in-font-lock ()
+(defun prettify-math--unregister-in-font-lock ()
   "Remove keywords."
   (cursor-sensor-mode -1)
-  (font-lock-remove-keywords nil prettify-math-mode--keywords)
-  (setq font-lock-extra-managed-props (--remove (memq it prettify-math-mode--extra-properties)
+  (font-lock-remove-keywords nil prettify-math--keywords)
+  (setq font-lock-extra-managed-props (--remove (memq it prettify-math--extra-properties)
                                                 font-lock-extra-managed-props)))
 
 ;;;###autoload
@@ -169,18 +169,18 @@ As syntax class is mostly exclusive."
   :lighter " pmath"
   (if prettify-math-mode
       (progn
-        (prettify-math-mode--register-in-font-lock)
+        (prettify-math--register-in-font-lock)
         (font-lock-flush))
-    (prettify-math-mode--unregister-in-font-lock)
+    (prettify-math--unregister-in-font-lock)
     (with-silent-modifications
       (remove-list-of-text-properties (point-min) (point-max)
-                                      (cons 'focus-on prettify-math-mode--extra-properties)))))
+                                      (cons 'focus-on prettify-math--extra-properties)))))
 
 ;;;###autoload
 (define-globalized-minor-mode global-prettify-math-mode
   prettify-math-mode
   prettify-math-mode)
 
-(provide 'prettify-math-mode)
+(provide 'prettify-math)
 
-;;; prettify-math-mode.el ends here
+;;; prettify-math.el ends here

@@ -9,7 +9,7 @@ Prerequire
     https://nodejs.dev/download/package-manager
 
 Installation
-  install `prettify-math-mode` from melpa
+  install `prettify-math` from melpa
 
 Usage
   enable prettify-math-mode in your buffer, or globally via
@@ -18,8 +18,8 @@ Usage
 Customization
   You can customize delimiter before this module loaded.
   Code example in init.el:
-  (setq prettify-math-mode-delimiters-alist '(("$$" . tex)
+  (setq prettify-math-delimiters-alist '(("$$" . tex)
     ("$" . tex)
     ("``" . asciimath)))
-  (require 'prettify-math-mode)
+  (require 'prettify-math)
 
