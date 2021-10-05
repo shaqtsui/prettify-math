@@ -169,6 +169,7 @@ As syntax class is mostly exclusive."
   :lighter " pmath"
   (if prettify-math-mode
       (progn
+        (font-lock-mode)
         (prettify-math--register-in-font-lock)
         (font-lock-flush))
     (prettify-math--unregister-in-font-lock)
