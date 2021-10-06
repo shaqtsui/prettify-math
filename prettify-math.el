@@ -111,10 +111,7 @@
 
 (defun prettify-math-type-by-delimiter-beg (delimiter-beg)
   "Delimiter type by DELIMITER-BEG."
-  (car (--keep (and  (or (and (stringp (car it))
-                              (equal (car it) delimiter-beg))
-                         (and (consp (car it))
-                              (equal (caar it) delimiter-beg)))
+  (car (--keep (and  (equal (prettify-math-delimiter-beg (car it)) delimiter-beg)
                      (cadr it))
                prettify-math-delimiters-alist)))
 
