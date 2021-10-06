@@ -31,6 +31,17 @@
   (should-not (equal (prettify-math-type-by-delimiter-beg "$$") 'tex))
   (should (equal (prettify-math-type-by-delimiter-beg "\\(") 'tex))
   (should (equal (prettify-math-type-by-delimiter-beg "`") 'asciimath))
-  (should (equal (prettify-math-type-by-delimiter-beg "``") 'asciimath)))
+  (should (equal (prettify-math-type-by-delimiter-beg "``") 'asciimath))
+  (should (prettify-math-block-delimiters))
+  (should (prettify-math-contains-block-delimiters-p))
+  (setq-local prettify-math-delimiters-alist '(("$" tex)
+                                  (("\\(" . "\\)") tex)
+                                  ("`" asciimath)
+                                  ("``" asciimath)))
+  (should-not (prettify-math-block-delimiters))
+  (should-not (prettify-math-contains-block-delimiters-p))
+  )
+
+
 
 ;;; prettify-math-test.el ends here

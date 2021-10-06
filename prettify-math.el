@@ -91,13 +91,15 @@
     ("`" asciimath)
     ("``" asciimath block)))
 
-(defun prettify-math-contains-block-delimiters-p ()
-  "Whether block delimiters available in delimiters-alist."
-  (--any? (caddr it) prettify-math-delimiters-alist))
-
 (defun prettify-math-block-delimiters ()
   "Block delimiters in delimiters-alist."
-  (-map #'car (--filter (equal 'block (caddr it)) prettify-math-delimiters-alist)))
+  (--keep (and (equal 'block (caddr it))
+               (car it))
+          prettify-math-delimiters-alist))
+
+(defun prettify-math-contains-block-delimiters-p ()
+  "Whether block delimiters available in delimiters-alist."
+  (consp (prettify-math-block-delimiters)))
 
 (defun prettify-math-delimiter-beg (delimiter)
   "DELIMITER itself or car DELIMITER."
