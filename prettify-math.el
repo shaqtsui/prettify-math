@@ -116,7 +116,7 @@
                prettify-math-delimiters-alist)))
 
 
-(defun prettify-math-extend-region ()
+(defun prettify-math-extend-block-delimiter-region ()
   "Extend region from previous block dlm end or bob to next block dlm beg."
   (let* ((changed nil)
          (bdlms (prettify-math-block-delimiters))
@@ -136,7 +136,8 @@
         (re-search-forward bdlm-begs-regexp (point-max) t)
         (unless (equal (point) font-lock-end)
           (setq changed t
-                font-lock-end (point)))))))
+                font-lock-end (point)))))
+    changed))
 
 
 (defun prettify-math--delimiter-to-regexp (delimiter &optional block)
@@ -204,7 +205,7 @@ As syntax class is mostly exclusive."
   (setq pre-redisplay-functions (delq 'cursor-sensor--detect pre-redisplay-functions))
   (when (prettify-math-contains-block-delimiters-p)
     (setq font-lock-multiline t)
-    (add-hook 'font-lock-extend-region-functions 'prettify-math-extend-region))
+    (add-hook 'font-lock-extend-region-functions 'prettify-math-extend-block-delimiter-region))
   (font-lock-add-keywords nil prettify-math--keywords)
   (--> prettify-math--extra-properties
        (append it font-lock-extra-managed-props)
@@ -215,7 +216,7 @@ As syntax class is mostly exclusive."
   (cursor-sensor-mode -1)
   (when (prettify-math-contains-block-delimiters-p)
     (setq font-lock-multiline nil)
-    (remove-hook 'font-lock-extend-region-functions 'prettify-math-extend-region))
+    (remove-hook 'font-lock-extend-region-functions 'prettify-math-extend-block-delimiter-region))
   (font-lock-remove-keywords nil prettify-math--keywords)
   (setq font-lock-extra-managed-props (--remove (memq it prettify-math--extra-properties)
                                         font-lock-extra-managed-props)))
