@@ -1,4 +1,4 @@
-Prettify math is a emacs minor mode to prettify math formulas.
+* Prettify math is a emacs minor mode to prettify math formulas.
 
 [[./prettify-math-demo.gif]]
 
@@ -6,18 +6,18 @@ It's base on mathjax, refer mathjax for math formula related
 stuffes. Default math formula delimiters: $$ -> tex math, ` ->
 asciimath.
 
-Prerequire
+** Prerequire
   nodejs - used to run mathjax, simple installation refer:
     https://nodejs.dev/download/package-manager
 
-Installation
+** Installation
   install `prettify-math` from melpa
 
-Usage
+** Usage
   enable prettify-math-mode in your buffer, or globally via
   global-prettify-math-mode.
 
-Customization
+** Customization
   You can customize delimiter before this module loaded.
   Code example in init.el:
   (setq prettify-math-delimiters-alist '(("$$" . tex)
