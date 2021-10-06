@@ -1,5 +1,7 @@
 Prettify math is a emacs minor mode to prettify math formulas.
 
+[[./prettify-math-demo.gif]]
+
 It's base on mathjax, refer mathjax for math formula related
 stuffes. Default math formula delimiters: $$ -> tex math, ` ->
 asciimath.
