@@ -7,21 +7,23 @@ stuffes. Default math formula delimiters: $$ -> tex math, ` ->
 asciimath.
 
 ** Prerequire
-  nodejs - used to run mathjax, simple installation refer:
-    https://nodejs.dev/download/package-manager
+nodejs - used to run mathjax, simple installation refer:
+  https://nodejs.dev/download/package-manager
 
 ** Installation
-  install `prettify-math` from melpa
+install `prettify-math` from melpa
 
 ** Usage
-  enable prettify-math-mode in your buffer, or globally via
-  global-prettify-math-mode.
+enable prettify-math-mode in your buffer, or globally via
+global-prettify-math-mode.
 
 ** Customization
-  You can customize delimiter before this module loaded.
-  Code example in init.el:
-  (setq prettify-math-delimiters-alist '(("$$" . tex)
-    ("$" . tex)
-    ("``" . asciimath)))
-  (require 'prettify-math)
+You can customize delimiter before this module loaded.
+Code example in init.el:
+#+begin_src elisp
+(setq prettify-math-delimiters-alist '(("$$" . tex)
+  ("$" . tex)
+  ("``" . asciimath)))
+(require 'prettify-math)
+#+end_src
 
