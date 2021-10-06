@@ -2,7 +2,7 @@
 
 ;; Author: Fucheng Xu <xfcjscn@163.com>
 ;; Maintainer: Fucheng Xu <xfcjscn@163.com>
-;; Version: 0.1
+;; Version: 0.3
 ;; Package-Requires: ((emacs "25.1") (dash "2.19.0") (jsonrpc "1.0.9"))
 ;; Homepage: https://gitee.com/xfcjscn/prettify-math
 ;; Keywords: math asciimath tex latex prettify 2-d mathjax
@@ -46,9 +46,10 @@
 ;; Customization
 ;;   You can customize delimiter before this module loaded.
 ;;   Code example in init.el:
-;;   (setq prettify-math-delimiters-alist '(("$$" . tex)
-;;     ("$" . tex)
-;;     ("``" . asciimath)))
+;;   (setq prettify-math-delimiters-alist '(("$" tex)
+;;    (("\\(" . "\\)") tex block)
+;;    ("`" asciimath)
+;;    ("``" asciimath block)))
 ;;   (require 'prettify-math)
 
 ;;; Code:
@@ -66,39 +67,92 @@
 
 (declare-function prettify-math--mathexp-to-svg "prettify-math" t t)
 (fset 'prettify-math--mathexp-to-svg (let* ((_ (prettify-math--init-mathjax))
-                             (mjserver (make-process :name "mjserver"
-                                                     :buffer "mjserver"
-                                                     :command '("node" "mathjax-jsonrpc.js")
-                                                     :connection-type 'pipe
-                                                     ;; :stderr "myjservererr"
-                                                     ))
-                             (conn (jsonrpc-process-connection :process mjserver)))
-                        (set-process-query-on-exit-flag mjserver nil)
-                        (lambda (exp &optional type)
-                          (jsonrpc-request conn
-                                           (-> type
-                                               (or 'asciimath)
-                                               symbol-name
-                                               (concat "2svg")
-                                               make-symbol)
-                                           exp))))
+                               (mjserver (make-process :name "mjserver"
+                                                       :buffer "mjserver"
+                                                       :command '("node" "mathjax-jsonrpc.js")
+                                                       :connection-type 'pipe
+                                                       ;; :stderr "myjservererr"
+                                                       ))
+                               (conn (jsonrpc-process-connection :process mjserver)))
+                          (set-process-query-on-exit-flag mjserver nil)
+                          (lambda (exp &optional type)
+                            (jsonrpc-request conn
+                                             (-> type
+                                                 (or 'asciimath)
+                                                 symbol-name
+                                                 (concat "2svg")
+                                                 make-symbol)
+                                             exp))))
 
 ;; can't use customize, as init depdent on it
 (defvar prettify-math-delimiters-alist
-  '(("$$" . tex)
-    ("`" . asciimath)))
+  '(("$" tex)
+    ("$$" tex block)
+    ("`" asciimath)
+    ("``" asciimath block)))
 
-(defun prettify-math--delimiter-to-regexp (delimiter)
-  "Regexp for expression inside DELIMITER."
-  (let* ((dlmt-beginning (cond ((consp delimiter) (car delimiter))
-                               ((atom delimiter) delimiter)))
-         (dlmt-end (cond ((consp delimiter) (cdr delimiter))
-                         ((atom delimiter) delimiter))))
+(defun prettify-math-contains-block-delimiters-p ()
+  "Whether block delimiters available in delimiters-alist."
+  (--any? (caddr it) prettify-math-delimiters-alist))
+
+(defun prettify-math-block-delimiters ()
+  "Block delimiters in delimiters-alist."
+  (-map #'car (--filter (equal 'block (caddr it)) prettify-math-delimiters-alist)))
+
+(defun prettify-math-delimiter-beg (delimiter)
+  "DELIMITER itself or car DELIMITER."
+  (cond ((consp delimiter) (car delimiter))
+        ((stringp delimiter) delimiter)))
+
+(defun prettify-math-delimiter-end (delimiter)
+  "DELIMITER itself or cdr DELIMITER."
+  (cond ((consp delimiter) (cdr delimiter))
+        ((stringp delimiter) delimiter)))
+
+(defun prettify-math-type-by-delimiter-beg (delimiter-beg)
+  "Delimiter type by DELIMITER-BEG."
+  (car (--keep (and  (or (and (stringp (car it))
+                              (equal (car it) delimiter-beg))
+                         (and (consp (car it))
+                              (equal (caar it) delimiter-beg)))
+                     (cadr it))
+               prettify-math-delimiters-alist)))
+
+
+(defun prettify-math-extend-region ()
+  "Extend region from previous block dlm end or bob to next block dlm beg."
+  (let* ((changed nil)
+         (bdlms (prettify-math-block-delimiters))
+         (bdlm-begs (-map #'prettify-math-delimiter-beg bdlms))
+         (bdlm-begs-regexp (regexp-opt bdlm-begs))
+         (bdlm-ends (-map #'prettify-math-delimiter-end bdlms))
+         (bdlm-ends-regexp (regexp-opt bdlm-ends)))
+    (save-excursion
+      (save-match-data
+        (goto-char font-lock-beg)
+        (re-search-backward bdlm-ends-regexp (point-min) t)
+        (unless (equal (point) font-lock-beg)
+          (setq changed t
+                font-lock-beg (point)))
+
+        (goto-char font-lock-end)
+        (re-search-forward bdlm-begs-regexp (point-max) t)
+        (unless (equal (point) font-lock-end)
+          (setq changed t
+                font-lock-end (point)))))))
+
+
+(defun prettify-math--delimiter-to-regexp (delimiter &optional block)
+  "Regexp (BLOCK) for expression inside DELIMITER."
+  (let* ((dlmt-beginning (prettify-math-delimiter-beg delimiter))
+         (dlmt-end (prettify-math-delimiter-end delimiter)))
     (concat "\\("
             (regexp-quote dlmt-beginning)
             "\\)"
             "\\("
-            ".+?"
+            (if block
+                "[^b-a]+?"
+              ".+?")
             "\\)"
             (regexp-quote dlmt-end))))
 
@@ -130,14 +184,14 @@ Unfontify before fontify?"
         `(face nil cursor-sensor-functions (prettify-math--update-focus-on)
                rear-nonsticky (cursor-sensor-functions))
       `(face nil display ((image . (:type svg
-                                          :data ,(prettify-math--mathexp-to-svg mathexp (assoc-default dlmt prettify-math-delimiters-alist))
+                                          :data ,(prettify-math--mathexp-to-svg mathexp (prettify-math-type-by-delimiter-beg dlmt))
                                           :scale 1.8))
                           (raise 0.4))
              cursor-sensor-functions (prettify-math--update-focus-on)
              rear-nonsticky (cursor-sensor-functions)))))
 
 (defvar prettify-math--keywords
-  (--map (list (prettify-math--delimiter-to-regexp (car it))
+  (--map (list (prettify-math--delimiter-to-regexp (car it) (caddr it))
                0
                '(prettify-math--facespec-fn))
          prettify-math-delimiters-alist))
@@ -151,6 +205,9 @@ Unfontify before fontify?"
 As syntax class is mostly exclusive."
   (cursor-sensor-mode 1)
   (setq pre-redisplay-functions (delq 'cursor-sensor--detect pre-redisplay-functions))
+  (when (prettify-math-contains-block-delimiters-p)
+    (setq font-lock-multiline t)
+    (add-hook 'font-lock-extend-region-functions 'prettify-math-extend-region))
   (font-lock-add-keywords nil prettify-math--keywords)
   (--> prettify-math--extra-properties
        (append it font-lock-extra-managed-props)
@@ -159,9 +216,13 @@ As syntax class is mostly exclusive."
 (defun prettify-math--unregister-in-font-lock ()
   "Remove keywords."
   (cursor-sensor-mode -1)
+  (when (prettify-math-contains-block-delimiters-p)
+    (setq font-lock-multiline nil)
+    (remove-hook 'font-lock-extend-region-functions 'prettify-math-extend-region))
   (font-lock-remove-keywords nil prettify-math--keywords)
   (setq font-lock-extra-managed-props (--remove (memq it prettify-math--extra-properties)
-                                                font-lock-extra-managed-props)))
+                                        font-lock-extra-managed-props)))
+
 
 ;;;###autoload
 (define-minor-mode prettify-math-mode
@@ -169,7 +230,6 @@ As syntax class is mostly exclusive."
   :lighter " pmath"
   (if prettify-math-mode
       (progn
-        (font-lock-mode)
         (prettify-math--register-in-font-lock)
         (font-lock-flush))
     (prettify-math--unregister-in-font-lock)
