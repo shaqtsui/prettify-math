@@ -57,6 +57,8 @@
 (require 'jsonrpc)
 (require 'dash)
 
+
+;;;;;;;;;;;;;;;;;;; mathjax ;;;;;;;;;;;;;;;;;
 (defconst prettify-math--pkg-base (if load-file-name (file-name-directory load-file-name) "./"))
 (setq default-directory (expand-file-name prettify-math--pkg-base))
 
@@ -84,12 +86,16 @@
                                                  make-symbol)
                                              exp))))
 
+;;;;;;;;;;;;;;;;;;; end mathjax ;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;; delimiter & utils ;;;;;;;;;;;;;;;;;
 ;; can't use customize, as init depdent on it
 (defvar prettify-math-delimiters-alist
   '(("$" tex)
     ("$$" tex block)
     ("`" asciimath)
-    ("``" asciimath block)))
+    ("``" asciimath block))
+  "Delimiter is a string or cons of string.")
 
 (defun prettify-math-block-delimiters ()
   "Block delimiters in delimiters-alist."
@@ -117,31 +123,6 @@
                      (cadr it))
                prettify-math-delimiters-alist)))
 
-
-(defun prettify-math-extend-block-delimiter-region ()
-  "Extend region from previous block dlm end or bob to next block dlm beg."
-  (let* ((changed nil)
-         (bdlms (prettify-math-block-delimiters))
-         (bdlm-begs (-map #'prettify-math-delimiter-beg bdlms))
-         (bdlm-begs-regexp (regexp-opt bdlm-begs))
-         (bdlm-ends (-map #'prettify-math-delimiter-end bdlms))
-         (bdlm-ends-regexp (regexp-opt bdlm-ends)))
-    (save-excursion
-      (save-match-data
-        (goto-char font-lock-beg)
-        (re-search-backward bdlm-ends-regexp (point-min) t)
-        (unless (equal (point) font-lock-beg)
-          (setq changed t
-                font-lock-beg (point)))
-
-        (goto-char font-lock-end)
-        (re-search-forward bdlm-begs-regexp (point-max) t)
-        (unless (equal (point) font-lock-end)
-          (setq changed t
-                font-lock-end (point)))))
-    changed))
-
-
 (defun prettify-math--delimiter-to-regexp (delimiter &optional block)
   "Regexp (BLOCK) for expression inside DELIMITER."
   (let* ((dlmt-beginning (prettify-math-delimiter-beg delimiter))
@@ -157,6 +138,9 @@
             (regexp-quote dlmt-end))))
 
 
+;;;;;;;;;;;;;;;;;;; end delimiter & utils ;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;; fontlock related ;;;;;;;;;;;;;;;;;
 (defun prettify-math--update-focus-on (_ old-pos action)
   "Update text property focus-on.
 Base on OLD-POS to calculate texts when ACTION is entered, otherwise on point."
@@ -199,7 +183,32 @@ Unfontify before fontify?"
 (defvar prettify-math--extra-properties
   '(display cursor-sensor-functions rear-nonsticky))
 
+(defun prettify-math-extend-block-delimiter-region ()
+  "Extend region from previous block dlm end or bob to next block dlm beg."
+  (let* ((changed nil)
+         (bdlms (prettify-math-block-delimiters))
+         (bdlm-begs (-map #'prettify-math-delimiter-beg bdlms))
+         (bdlm-begs-regexp (regexp-opt bdlm-begs))
+         (bdlm-ends (-map #'prettify-math-delimiter-end bdlms))
+         (bdlm-ends-regexp (regexp-opt bdlm-ends)))
+    (save-excursion
+      (save-match-data
+        (goto-char font-lock-beg)
+        (re-search-backward bdlm-ends-regexp (point-min) t)
+        (unless (equal (point) font-lock-beg)
+          (setq changed t
+                font-lock-beg (point)))
 
+        (goto-char font-lock-end)
+        (re-search-forward bdlm-begs-regexp (point-max) t)
+        (unless (equal (point) font-lock-end)
+          (setq changed t
+                font-lock-end (point)))))
+    changed))
+
+;;;;;;;;;;;;;;;;;;; end fontlock related ;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;; mode related ;;;;;;;;;;;;;;;;;
 (defun prettify-math--register-in-font-lock ()
   "Only keyword is suitble here.
 As syntax class is mostly exclusive."
@@ -241,6 +250,7 @@ As syntax class is mostly exclusive."
 (define-globalized-minor-mode global-prettify-math-mode
   prettify-math-mode
   prettify-math-mode)
+;;;;;;;;;;;;;;;;;;; end mode related ;;;;;;;;;;;;;;;;;
 
 (provide 'prettify-math)
 
