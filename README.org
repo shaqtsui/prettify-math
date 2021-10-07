@@ -17,9 +17,12 @@ enable ~prettify-math-mode~ in your buffer, or globally via ~global-prettify-mat
 You can customize delimiter before this module loaded.
 Code example in init.el:
 #+begin_src elisp
-(setq prettify-math-delimiters-alist '(("$$" . tex)
-  ("$" . tex)
-  ("``" . asciimath)))
+(setq prettify-math-delimiters-alist
+  '(("$" tex)
+    ("$$" tex block)
+    (("\\(" . "\\)") tex block)
+    ("`" asciimath)
+    ("``" asciimath block)))
 (require 'prettify-math)
 #+end_src
 
