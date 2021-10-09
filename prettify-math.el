@@ -2,8 +2,8 @@
 
 ;; Author: Fucheng Xu <xfcjscn@163.com>
 ;; Maintainer: Fucheng Xu <xfcjscn@163.com>
-;; Version: 0.3
-;; Package-Requires: ((emacs "25.1") (dash "2.19.0") (jsonrpc "1.0.9"))
+;; Version: 0.4
+;; Package-Requires: ((emacs "27.1") (dash "2.19.0") (s "1.12.0") (jsonrpc "1.0.9"))
 ;; Homepage: https://gitee.com/xfcjscn/prettify-math
 ;; Keywords: math asciimath tex latex prettify 2-d mathjax
 
@@ -56,6 +56,9 @@
 
 (require 'jsonrpc)
 (require 'dash)
+(require 's)
+(require 'dom)
+(require 'svg)
 
 
 ;;;;;;;;;;;;;;;;;;; mathjax ;;;;;;;;;;;;;;;;;
@@ -71,7 +74,7 @@
 (fset 'prettify-math--mathexp-to-svg (let* ((_ (prettify-math--init-mathjax))
                                (mjserver (make-process :name "mjserver"
                                                        :buffer "mjserver"
-                                                       :command '("node" "mathjax-jsonrpc.js")
+                                                       :command '("node" "-r" "esm" "mathjax-jsonrpc.js")
                                                        :connection-type 'pipe
                                                        ;; :stderr "myjservererr"
                                                        ))
@@ -85,6 +88,44 @@
                                                  (concat "2svg")
                                                  make-symbol)
                                              exp))))
+
+(defun prettify-math--to-dom (s)
+  "Convert S to dom, if required."
+  (if (listp s)
+      s
+    (with-temp-buffer
+      (insert s)
+      (libxml-parse-xml-region (point-min) (point-max)))))
+
+(defun prettify-math--dom-update-attr (node attr fn)
+  "FN update NODE ATTR."
+  (dom-set-attribute node attr
+                     (funcall fn (dom-attr node attr))))
+
+
+(defun prettify-math--string-to-nu (s)
+  (let ((num (car (s-match "[0-9.]+" s)))
+        (unit (car (s-match "[[:alpha:]]+" s))))
+    (cons (string-to-number num)
+          unit)))
+
+(defun prettify-math--nu-to-string (nu)
+  (concat (number-to-string (car nu))
+          (cdr nu)))
+
+(defun prettify-math--scale-nu (nu factor)
+  (cons (* factor (car nu))
+        (cdr nu)))
+
+(defun prettify-math--scale-svg (s-or-dom factor)
+  "Dom of scaled S-OR-DOM by FACTOR."
+  (let ((s-dom (prettify-math--to-dom s-or-dom))
+        (update-fn (-compose #'prettify-math--nu-to-string
+                             (-rpartial #'prettify-math--scale-nu factor)
+                             #'prettify-math--string-to-nu)))
+    (prettify-math--dom-update-attr s-dom 'width update-fn)
+    (prettify-math--dom-update-attr s-dom 'height update-fn)
+    s-dom))
 
 ;;;;;;;;;;;;;;;;;;; end mathjax ;;;;;;;;;;;;;;;;;
 
@@ -167,10 +208,12 @@ Unfontify before fontify?"
     (if (get-text-property start 'focus-on)
         `(face nil cursor-sensor-functions (prettify-math--update-focus-on)
                rear-nonsticky (cursor-sensor-functions))
-      `(face nil display ((image . (:type svg
-                                          :data ,(prettify-math--mathexp-to-svg mathexp (prettify-math-type-by-delimiter-beg dlmt))
-                                          :scale 1.8))
-                          (raise 0.4))
+      ;; scale not change resolution, so may blur image
+      `(face nil display (,(--> dlmt
+                                (prettify-math-type-by-delimiter-beg it)
+                                (prettify-math--mathexp-to-svg mathexp it)
+                                (prettify-math--scale-svg it 1.5)
+                                (svg-image it :ascent 'center)))
              cursor-sensor-functions (prettify-math--update-focus-on)
              rear-nonsticky (cursor-sensor-functions)))))
 
@@ -237,14 +280,17 @@ As syntax class is mostly exclusive."
 (define-minor-mode prettify-math-mode
   "prettify math mode base on font lock"
   :lighter " pmath"
-  (if prettify-math-mode
-      (progn
-        (prettify-math--register-in-font-lock)
-        (font-lock-flush))
-    (prettify-math--unregister-in-font-lock)
-    (with-silent-modifications
-      (remove-list-of-text-properties (point-min) (point-max)
-                                      (cons 'focus-on prettify-math--extra-properties)))))
+  (if (and (display-images-p)
+           (image-type-available-p 'svg))
+      (if prettify-math-mode
+          (progn
+            (prettify-math--register-in-font-lock)
+            (font-lock-flush))
+        (prettify-math--unregister-in-font-lock)
+        (with-silent-modifications
+          (remove-list-of-text-properties (point-min) (point-max)
+                                          (cons 'focus-on prettify-math--extra-properties))))
+    (warn "Display image (of svg) not supported")))
 
 ;;;###autoload
 (define-globalized-minor-mode global-prettify-math-mode

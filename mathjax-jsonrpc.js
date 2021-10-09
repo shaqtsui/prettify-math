@@ -1,10 +1,19 @@
-#!/usr/bin/env node
-const mathjax = require('mathjax');
+#!/usr/bin/env node -r esm
+//const mathjax = require('mathjax-full/es5/node-main.js');
+const mathjax = require('mathjax-full/components/src/node-main/node-main.js');
 
 const rpc = require('vscode-jsonrpc');
 
 mathjax.init({
-    loader: { load: ['input/asciimath', 'input/tex', 'output/svg'] }
+    loader: {
+        load: ['input/asciimath', 'input/tex', 'output/svg'],
+        source: require('mathjax-full/components/src/source.js').source
+    },
+    svg: {
+        scale: 2,
+        minScale: 1.5,
+        exFactor: 2
+    }
 }).then((MathJax) => {
     let connection = rpc.createMessageConnection(
         new rpc.StreamMessageReader(process.stdin),

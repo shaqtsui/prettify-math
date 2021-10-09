@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "mathjax": "^3.2.0",
+    "mathjax-full": "^3.2.0",
     "vscode-jsonrpc": "^6.0.0"
   },
   "name": "mathjax-jsonrpc",
