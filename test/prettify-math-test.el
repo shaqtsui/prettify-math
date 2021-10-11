@@ -1,4 +1,16 @@
 ;;; prettify-math-test.el --- Tests for prettify-math
+
+;;; Commentary:
+;; 
+
+;;; Code:
+
+;; checkdoc
+;; cask emacs --batch --file prettify-math.el --funcall checkdoc
+
+;; compile check
+;; cask emacs --batch --funcall batch-byte-compile prettify-math.el
+
 (ert-deftest prettify-math-load-test ()
   "file can be loaded?"
   (should (require 'prettify-math)))
@@ -11,6 +23,36 @@
     (goto-char (point-min))
     (re-search-forward (prettify-math--delimiter-to-regexp "$$") (point-max) t)
     (should (prettify-math--facespec-fn))))
+
+(ert-deftest prettify-math-mjserver-test ()
+  "mj server will exist after test, as sub process terminate"
+  (require 'prettify-math)
+  (unwind-protect
+      (progn
+        (prettify-math--ensure-mjserver)
+        (should prettify-math--mjserver)
+        (should (get-process "mjserver")))
+    (setq prettify-math--mjserver nil)))
+
+(ert-deftest prettify-math-conn-test ()
+  "mj server will exist after should, as sub process terminate"
+  (require 'prettify-math)
+  (unwind-protect
+      (progn
+        (prettify-math--ensure-conn)
+        (should prettify-math--conn)
+        (should (get-process "mjserver")))
+    (setq prettify-math--mjserver nil)
+    (setq prettify-math--conn nil)))
+
+(ert-deftest prettify-math-mathexp-test ()
+  (require 'prettify-math)
+  (unwind-protect
+      (progn
+        (setq res (prettify-math--mathexp-to-svg "f"))
+        (should res))
+    (setq prettify-math--mjserver nil)
+    (setq prettify-math--conn nil)))
 
 (ert-deftest prettify-math-mode-test ()
   "mode test"

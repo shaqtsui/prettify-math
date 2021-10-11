@@ -65,29 +65,49 @@
 (defconst prettify-math--pkg-base (if load-file-name (file-name-directory load-file-name) "./"))
 (setq default-directory (expand-file-name prettify-math--pkg-base))
 
-(defun prettify-math--init-mathjax ()
+(defun prettify-math--ensure-mathjax ()
   "Install mathjax dependencies."
   (unless (file-exists-p (expand-file-name "package-lock.json" prettify-math--pkg-base))
     (call-process "npm" nil "*init-mathjax*" nil "install")))
 
-(declare-function prettify-math--mathexp-to-svg "prettify-math" t t)
-(fset 'prettify-math--mathexp-to-svg (let* ((_ (prettify-math--init-mathjax))
-                               (mjserver (make-process :name "mjserver"
-                                                       :buffer "mjserver"
-                                                       :command '("node" "-r" "esm" "mathjax-jsonrpc.js")
-                                                       :connection-type 'pipe
-                                                       ;; :stderr "myjservererr"
-                                                       ))
-                               (conn (jsonrpc-process-connection :process mjserver)))
-                          (set-process-query-on-exit-flag mjserver nil)
-                          (lambda (exp &optional type)
-                            (jsonrpc-request conn
-                                             (-> type
-                                                 (or 'asciimath)
-                                                 symbol-name
-                                                 (concat "2svg")
-                                                 make-symbol)
-                                             exp))))
+(defvar prettify-math--mjserver nil
+  "Mathjax server process.")
+
+(defun prettify-math--ensure-mjserver ()
+  "Init mjserver if required."
+  (unless (and prettify-math--mjserver
+               (process-live-p prettify-math--mjserver))
+    (prettify-math--ensure-mathjax)
+    (setq prettify-math--mjserver (make-process :name "mjserver"
+                                   :buffer "mjserver"
+                                   :command '("node" "-r" "esm" "mathjax-jsonrpc.js")
+                                   :connection-type 'pipe
+                                   ;; :stderr "myjservererr"
+                                   ))
+    (set-process-query-on-exit-flag prettify-math--mjserver nil))
+  prettify-math--mjserver)
+
+(defvar prettify-math--conn nil
+  "Jsonrpc conn obj.")
+
+(defun prettify-math--ensure-conn ()
+  "Init conn if requried."
+  (unless prettify-math--conn
+    (prettify-math--ensure-mjserver)
+    (setq prettify-math--conn (jsonrpc-process-connection :process prettify-math--mjserver)))
+  prettify-math--conn)
+
+
+(defun prettify-math--mathexp-to-svg (exp &optional type)
+  "Convert math EXP of TYPE(tex, asciimath) to svg."
+  (prettify-math--ensure-conn)
+  (jsonrpc-request prettify-math--conn
+                   (-> type
+                       (or 'asciimath)
+                       symbol-name
+                       (concat "2svg")
+                       make-symbol)
+                   exp))
 
 (defun prettify-math--to-dom (s)
   "Convert S to dom, if required."
@@ -104,16 +124,19 @@
 
 
 (defun prettify-math--string-to-nu (s)
+  "String S to number with unit."
   (let ((num (car (s-match "[0-9.]+" s)))
         (unit (car (s-match "[[:alpha:]]+" s))))
     (cons (string-to-number num)
           unit)))
 
 (defun prettify-math--nu-to-string (nu)
+  "Number with unit NU to string."
   (concat (number-to-string (car nu))
           (cdr nu)))
 
 (defun prettify-math--scale-nu (nu factor)
+  "Scale NU by factor FACTOR."
   (cons (* factor (car nu))
         (cdr nu)))
 
@@ -236,17 +259,20 @@ Unfontify before fontify?"
          (bdlm-ends-regexp (regexp-opt bdlm-ends)))
     (save-excursion
       (save-match-data
-        (goto-char font-lock-beg)
-        (re-search-backward bdlm-ends-regexp (point-min) t)
-        (unless (equal (point) font-lock-beg)
-          (setq changed t
-                font-lock-beg (point)))
-
-        (goto-char font-lock-end)
-        (re-search-forward bdlm-begs-regexp (point-max) t)
-        (unless (equal (point) font-lock-end)
-          (setq changed t
-                font-lock-end (point)))))
+        (if (boundp 'font-lock-beg)
+            (progn
+              (goto-char font-lock-beg)
+              (re-search-backward bdlm-ends-regexp (point-min) t)
+              (unless (equal (point) font-lock-beg)
+                (setq changed t
+                      font-lock-beg (point)))))
+        (if (boundp 'font-lock-end)
+            (progn
+              (goto-char font-lock-end)
+              (re-search-forward bdlm-begs-regexp (point-max) t)
+              (unless (equal (point) font-lock-end)
+                (setq changed t
+                      font-lock-end (point)))))))
     changed))
 
 ;;;;;;;;;;;;;;;;;;; end fontlock related ;;;;;;;;;;;;;;;;;
@@ -259,7 +285,7 @@ As syntax class is mostly exclusive."
   (setq pre-redisplay-functions (delq 'cursor-sensor--detect pre-redisplay-functions))
   (when (prettify-math-contains-block-delimiters-p)
     (setq font-lock-multiline t)
-    (add-hook 'font-lock-extend-region-functions 'prettify-math-extend-block-delimiter-region))
+    (add-hook 'font-lock-extend-region-functions #'prettify-math-extend-block-delimiter-region))
   (font-lock-add-keywords nil prettify-math--keywords)
   (--> prettify-math--extra-properties
        (append it font-lock-extra-managed-props)
@@ -270,7 +296,7 @@ As syntax class is mostly exclusive."
   (cursor-sensor-mode -1)
   (when (prettify-math-contains-block-delimiters-p)
     (setq font-lock-multiline nil)
-    (remove-hook 'font-lock-extend-region-functions 'prettify-math-extend-block-delimiter-region))
+    (remove-hook 'font-lock-extend-region-functions #'prettify-math-extend-block-delimiter-region))
   (font-lock-remove-keywords nil prettify-math--keywords)
   (setq font-lock-extra-managed-props (--remove (memq it prettify-math--extra-properties)
                                         font-lock-extra-managed-props)))
