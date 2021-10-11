@@ -68,7 +68,7 @@
 (defun prettify-math--ensure-mathjax ()
   "Install mathjax dependencies."
   (unless (file-exists-p (expand-file-name "package-lock.json" prettify-math--pkg-base))
-    (call-process "npm" nil "*init-mathjax*" nil "install")))
+    (call-process "npm" nil "*init-mathjax*" nil "install" "mathjax-full" "vscode-jsonrpc")))
 
 (defvar prettify-math--mjserver nil
   "Mathjax server process.")
