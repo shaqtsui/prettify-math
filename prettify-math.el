@@ -2,7 +2,7 @@
 
 ;; Author: Fucheng Xu <xfcjscn@163.com>
 ;; Maintainer: Fucheng Xu <xfcjscn@163.com>
-;; Version: 0.4
+;; Version: 0.5
 ;; Package-Requires: ((emacs "27.1") (dash "2.19.0") (s "1.12.0") (jsonrpc "1.0.9"))
 ;; Homepage: https://gitee.com/xfcjscn/prettify-math
 ;; Keywords: math asciimath tex latex prettify 2-d mathjax
@@ -62,13 +62,14 @@
 
 
 ;;;;;;;;;;;;;;;;;;; mathjax ;;;;;;;;;;;;;;;;;
-(defconst prettify-math--pkg-base (if load-file-name (file-name-directory load-file-name) "./"))
-(setq default-directory (expand-file-name prettify-math--pkg-base))
+(defconst prettify-math--pkg-base (expand-file-name (if load-file-name (file-name-directory load-file-name) "./")))
+
 
 (defun prettify-math--ensure-mathjax ()
   "Install mathjax dependencies."
   (unless (file-exists-p (expand-file-name "package-lock.json" prettify-math--pkg-base))
-    (call-process "npm" nil "*init-mathjax*" nil "install" "mathjax-full" "vscode-jsonrpc")))
+    (let ((default-directory prettify-math--pkg-base))
+      (call-process "npm" nil "*init-mathjax*" nil "install" "mathjax-full" "vscode-jsonrpc"))))
 
 (defvar prettify-math--mjserver nil
   "Mathjax server process.")
@@ -78,12 +79,13 @@
   (unless (and prettify-math--mjserver
                (process-live-p prettify-math--mjserver))
     (prettify-math--ensure-mathjax)
-    (setq prettify-math--mjserver (make-process :name "mjserver"
-                                   :buffer "mjserver"
-                                   :command '("node" "-r" "esm" "mathjax-jsonrpc.js")
-                                   :connection-type 'pipe
-                                   ;; :stderr "myjservererr"
-                                   ))
+    (setq prettify-math--mjserver (let ((default-directory prettify-math--pkg-base))
+                       (make-process :name "mjserver"
+                                     :buffer "mjserver"
+                                     :command '("node" "-r" "esm" "mathjax-jsonrpc.js")
+                                     :connection-type 'pipe
+                                     ;;:stderr "myjservererr"
+                                     )))
     (set-process-query-on-exit-flag prettify-math--mjserver nil))
   prettify-math--mjserver)
 
@@ -98,6 +100,13 @@
   prettify-math--conn)
 
 
+(defun prettify-math-reset-conn ()
+  "If server down, reset it."
+  (setq prettify-math--mjserver nil)
+  (setq prettify-math--conn nil))
+
+;; (prettify-math-reset-conn)
+
 (defun prettify-math--mathexp-to-svg (exp &optional type)
   "Convert math EXP of TYPE(tex, asciimath) to svg."
   (prettify-math--ensure-conn)
@@ -111,11 +120,9 @@
 
 (defun prettify-math--to-dom (s)
   "Convert S to dom, if required."
-  (if (listp s)
-      s
-    (with-temp-buffer
-      (insert s)
-      (libxml-parse-xml-region (point-min) (point-max)))))
+  (with-temp-buffer
+    (insert s)
+    (libxml-parse-xml-region (point-min) (point-max))))
 
 (defun prettify-math--dom-update-attr (node attr fn)
   "FN update NODE ATTR."
@@ -140,15 +147,39 @@
   (cons (* factor (car nu))
         (cdr nu)))
 
-(defun prettify-math--scale-svg (s-or-dom factor)
-  "Dom of scaled S-OR-DOM by FACTOR."
-  (let ((s-dom (prettify-math--to-dom s-or-dom))
-        (update-fn (-compose #'prettify-math--nu-to-string
+(defun prettify-math--scale-svg (svg factor)
+  "Scale SVG by FACTOR."
+  (let ((update-fn (-compose #'prettify-math--nu-to-string
                              (-rpartial #'prettify-math--scale-nu factor)
                              #'prettify-math--string-to-nu)))
-    (prettify-math--dom-update-attr s-dom 'width update-fn)
-    (prettify-math--dom-update-attr s-dom 'height update-fn)
-    s-dom))
+    (prettify-math--dom-update-attr svg 'width update-fn)
+    (prettify-math--dom-update-attr svg 'height update-fn)
+    svg))
+
+(defun prettify-math--ensure-defs (svg)
+  "Ensure defs available in SVG."
+  (or (dom-by-tag svg 'defs)
+      (--doto (dom-node 'defs)
+        (dom-add-child-before svg it)))
+  svg)
+
+(defun prettify-math--ensure-style (svg)
+  "Ensure style available in SVG."
+  (or (dom-by-tag svg 'style)
+      (progn (prettify-math--ensure-defs svg)
+             (--doto (dom-node 'style)
+               (dom-add-child-before (dom-by-tag svg 'defs)
+                                     it))))
+  svg)
+
+(defun prettify-math--color-to-rgb (c)
+  "Color C to #rgb."
+  (if (color-defined-p c)
+      (--> c
+           (color-values it)
+           (mapcar (lambda (c) (ash c -8)) it)
+           (apply #'format "#%02x%02x%02x" it))
+    c))
 
 ;;;;;;;;;;;;;;;;;;; end mathjax ;;;;;;;;;;;;;;;;;
 
@@ -235,7 +266,15 @@ Unfontify before fontify?"
       `(face nil display (,(--> dlmt
                                 (prettify-math-type-by-delimiter-beg it)
                                 (prettify-math--mathexp-to-svg mathexp it)
-                                (prettify-math--scale-svg it 1.5)
+                                (prettify-math--to-dom it)
+                                (prettify-math--scale-svg it (*  1.5
+                                                    (or (--> face-remapping-alist
+                                                             (assoc-default 'default it)
+                                                             (assoc-default :height it)
+                                                             car)
+                                                        1)))
+                                (-doto it
+                                  (dom-set-attribute 'color (prettify-math--color-to-rgb (foreground-color-at-point))))
                                 (svg-image it :ascent 'center)))
              cursor-sensor-functions (prettify-math--update-focus-on)
              rear-nonsticky (cursor-sensor-functions)))))
