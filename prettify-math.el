@@ -5,7 +5,7 @@
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "27.1") (dash "2.19.0") (s "1.12.0") (jsonrpc "1.0.9"))
 ;; Homepage: https://gitee.com/shaqxu/prettify-math
-;; Keywords: math asciimath tex latex prettify 2-d mathjax
+;; Keywords: math asciimath tex latex prettify mathjax
 
 
 ;; This file is not part of GNU Emacs
@@ -29,10 +29,10 @@
 ;; Prettify math is a EMACS minor mode to prettify math formulas.
 ;;
 ;; It's base on mathjax, refer mathjax for math formula related
-;; stuffes.  Default math formula delimiters: $$ -> tex math, ` ->
+;; stuffs.  Default math formula delimiters: $$ -> tex math, ` ->
 ;; asciimath.
 ;;
-;; Prerequire
+;; Prerequisite
 ;;   nodejs - used to run mathjax, simple installation refer:
 ;;     https://nodejs.dev/download/package-manager
 ;;
@@ -347,14 +347,18 @@ As syntax class is mostly exclusive."
   :lighter " pmath"
   (if (and (display-images-p)
            (image-type-available-p 'svg))
-      (if prettify-math-mode
-          (progn
-            (prettify-math--register-in-font-lock)
-            (font-lock-flush))
-        (prettify-math--unregister-in-font-lock)
-        (with-silent-modifications
-          (remove-list-of-text-properties (point-min) (point-max)
-                                          (cons 'focus-on prettify-math--extra-properties))))
+      (if (or (file-exists-p (expand-file-name "package-lock.json" prettify-math--pkg-base))
+              (and (yes-or-no-p "Install node module: mathjax-full?")
+                   (equal 0 (prettify-math--ensure-mathjax))))
+          (if prettify-math-mode
+              (progn
+                (prettify-math--register-in-font-lock)
+                (font-lock-flush))
+            (prettify-math--unregister-in-font-lock)
+            (with-silent-modifications
+              (remove-list-of-text-properties (point-min) (point-max)
+                                              (cons 'focus-on prettify-math--extra-properties))))
+        (warn "Prettify-math not work as mathjax not installed"))
     (warn "Display image (of svg) not supported")))
 
 ;;;###autoload

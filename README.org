@@ -2,9 +2,9 @@
 
 [[./prettify-math-demo.gif]]
 
-It's base on mathjax, refer mathjax for math formula related stuffes. Default math formula delimiters: ~`~ -> asciimath, ~$$~ -> tex math.
+It's base on mathjax, refer mathjax for math formula related stuffs. Default math formula delimiters: ~`~ -> asciimath, ~$$~ -> tex math.
 
-** Prerequire
+** Prerequisite
 ~nodejs~ - used to run mathjax, simple installation refer: [[https://nodejs.dev/download/package-manager][Installing Node.js]]
 
 ** Installation
