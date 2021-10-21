@@ -8,7 +8,30 @@ It's base on mathjax, refer mathjax for math formula related stuffs. Default mat
 ~nodejs~ - used to run mathjax, simple installation refer: [[https://nodejs.dev/download/package-manager][Installing Node.js]]
 
 ** Installation
-install ~prettify-math~ from ~melpa~
+*** via straight.el
+#+begin_src elisp
+(straight-use-package '(prettify-math :host nil :repo "https://gitee.com/shaqxu/prettify-math"))
+#+end_src
+
+*** from ~melpa~ (in-progress)
+add melpa if not available
+#+begin_src elisp
+(require 'package)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+(package-initialize)
+#+end_src
+
+Code:
+#+begin_src elisp
+(package-refresh-contents)
+(package-install 'prettify-math)
+#+end_src
+
+Command:
+~M-x package-refresh-contents~
+~M-x package-install~
+~prettify-math~
+
 
 ** Usage
 enable ~prettify-math-mode~ in your buffer, or globally via ~global-prettify-math-mode~
