@@ -258,7 +258,8 @@ Base on OLD-POS to calculate texts when ACTION is entered, otherwise on point."
         (let ((s (previous-single-property-change (1+ (point)) 'display nil (point-min)))
               (e (next-single-property-change (point) 'display nil (point-max))))
           (put-text-property s e 'focus-on t)
-          (font-lock-flush s e))
+          ;; flush (1- s) to fix font-lock render bug
+          (font-lock-flush (1- s) e))
       (let ((s (previous-single-property-change (1+ old-pos) 'display nil (point-min)))
             (e (next-single-property-change old-pos 'display nil (point-max))))
         (remove-text-properties s e '(focus-on))
@@ -274,7 +275,7 @@ Unfontify before fontify?"
          (dlmt (match-string 1))
          (mathexp (match-string 2)))
     (if (get-text-property start 'focus-on)
-        `(face nil cursor-sensor-functions (prettify-math--update-focus-on)
+        `(face highlight cursor-sensor-functions (prettify-math--update-focus-on)
                rear-nonsticky (cursor-sensor-functions))
       ;; scale not change resolution, so may blur image
       `(face nil display (,(--> dlmt
