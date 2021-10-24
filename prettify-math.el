@@ -62,14 +62,25 @@
 
 
 ;;;;;;;;;;;;;;;;;;; mathjax ;;;;;;;;;;;;;;;;;
-(defconst prettify-math--pkg-base (expand-file-name (if load-file-name (file-name-directory load-file-name) "./")))
+(defconst prettify-math--pkg-directory (expand-file-name (if load-file-name (file-name-directory load-file-name) "./")))
+
+(defconst prettify-math--mathjax-workspace (concat user-emacs-directory
+                                      ".prettify-math/"))
 
 
 (defun prettify-math--ensure-mathjax ()
   "Install mathjax dependencies."
-  (unless (file-exists-p (expand-file-name "package-lock.json" prettify-math--pkg-base))
-    (let ((default-directory prettify-math--pkg-base))
-      (call-process "npm" nil "*init-mathjax*" nil "install" "mathjax-full" "vscode-jsonrpc"))))
+  (unless (file-exists-p (expand-file-name "package-lock.json" prettify-math--mathjax-workspace))
+    (or (file-exists-p prettify-math--mathjax-workspace)
+        (make-directory prettify-math--mathjax-workspace))
+    (let ((default-directory prettify-math--mathjax-workspace))
+      (message "Installing mathjax in %s" default-directory)
+      (let ((res (call-process "npm" nil "*init-mathjax*" nil "install" "mathjax-full" "vscode-jsonrpc")))
+        (if (= 0 res)
+            (message "Successfully installed mathjax.")
+          (throw 'error (concat "npm install return: "
+                                (number-to-string res)
+                                ", check buffer *init-mathjax* for details.")))))))
 
 (defvar prettify-math--mjserver nil
   "Mathjax server process.")
@@ -79,15 +90,19 @@
   (unless (and prettify-math--mjserver
                (process-live-p prettify-math--mjserver))
     (prettify-math--ensure-mathjax)
-    (setq prettify-math--mjserver (let ((default-directory prettify-math--pkg-base))
-                       (make-process :name "mjserver"
-                                     :buffer "mjserver"
-                                     :command '("node" "-r" "esm" "mathjax-jsonrpc.js")
-                                     :connection-type 'pipe
-                                     ;;:stderr "myjservererr"
-                                     )))
-    (set-process-query-on-exit-flag prettify-math--mjserver nil))
-  prettify-math--mjserver)
+    (let* ((default-directory prettify-math--mathjax-workspace)
+           (p (make-process :name "mjserver"
+                            :buffer "*mjserver*"
+                            :command `("node" "-r" "esm" ,(concat prettify-math--pkg-directory
+                                                                  "mathjax-jsonrpc.js"))
+                            :connection-type 'pipe
+                            ;;:stderr "*myjservererr*"
+                            )))
+      (if (process-live-p p)
+          (progn
+            (set-process-query-on-exit-flag p nil)
+            (setq prettify-math--mjserver p))
+        (throw 'error "Mjserver down, check buffer *mjserver* or *mjservererr*")))))
 
 (defvar prettify-math--conn nil
   "Jsonrpc conn obj.")
@@ -96,8 +111,7 @@
   "Init conn if requried."
   (unless prettify-math--conn
     (prettify-math--ensure-mjserver)
-    (setq prettify-math--conn (jsonrpc-process-connection :process prettify-math--mjserver)))
-  prettify-math--conn)
+    (setq prettify-math--conn (jsonrpc-process-connection :process prettify-math--mjserver))))
 
 
 (defun prettify-math-reset-conn ()
@@ -347,7 +361,7 @@ As syntax class is mostly exclusive."
   :lighter " pmath"
   (if (and (display-images-p)
            (image-type-available-p 'svg))
-      (if (or (file-exists-p (expand-file-name "package-lock.json" prettify-math--pkg-base))
+      (if (or (file-exists-p (expand-file-name "package-lock.json" prettify-math--mathjax-workspace))
               (and (yes-or-no-p "Install node module: mathjax-full?")
                    (equal 0 (prettify-math--ensure-mathjax))))
           (if prettify-math-mode

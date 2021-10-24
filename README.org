@@ -10,7 +10,7 @@ It's base on mathjax, refer mathjax for math formula related stuffs. Default mat
 ** Installation
 *** via straight.el
 #+begin_src elisp
-(straight-use-package '(prettify-math :host nil :repo "https://gitee.com/shaqxu/prettify-math"))
+(straight-use-package '(prettify-math :host nil :repo "https://gitee.com/shaqxu/prettify-math" :files (:defaults "mathjax-jsonrpc.js")))
 #+end_src
 
 *** from ~melpa~ (in-progress)
@@ -28,9 +28,9 @@ Code:
 #+end_src
 
 Command:
-~M-x package-refresh-contents~
-~M-x package-install~
-~prettify-math~
+~M-x package-refresh-contents RET~
+~M-x package-install RET prettify-math RET~
+
 
 
 ** Usage
