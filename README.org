@@ -51,17 +51,17 @@ Code example in init.el:
 
 ** Compare with other similar packges
 *** Similar packages:
-[[https://gitlab.com/latex-math-preview/latex-math-preview][latex-math-preview]]
-[[https://github.com/aaptel/preview-latex][preview-latex(px)]]
-[[https://github.com/yangsheng6810/org-latex-impatient][org-latex-impatient]]
-[[https://github.com/TobiasZawada/texfrag][texfrag]]
-[[https://gitlab.com/matsievskiysv/math-preview][math-preview]]
+- [[https://gitlab.com/latex-math-preview/latex-math-preview][latex-math-preview]]
+- [[https://github.com/aaptel/preview-latex][preview-latex(px)]]
+- [[https://github.com/yangsheng6810/org-latex-impatient][org-latex-impatient]]
+- [[https://github.com/TobiasZawada/texfrag][texfrag]]
+- [[https://gitlab.com/matsievskiysv/math-preview][math-preview]]
 
 *** Why prettify-math:
-1. prettify-math implemented as minor mode, make it work in all major modes.
-2. Above projects implemented base on overlay, while implementation in this package base on font-lock.
-   Which means:
-   - JIT render not pre-complete render.
-   - no manual overlay maintenance.
-   - only provide face info, no view & render operation.
-3. Not only to support latex math expression, but also asciimath expression, in future other may supported.
+- prettify-math implemented as minor mode, make it work in all major modes.
+- Above projects implemented base on overlay, while implementation in this package base on font-lock.
+  Which means:
+  - JIT render not pre-complete render.
+  - no manual overlay maintenance.
+  - only provide face info, no view & render operation.
+- Not only to support latex math expression, but also asciimath expression, in future other may supported.
