@@ -13,28 +13,23 @@ It's base on mathjax, refer mathjax for math formula related stuffs. Default mat
 (straight-use-package '(prettify-math :host nil :repo "https://gitee.com/shaqxu/prettify-math" :files (:defaults "mathjax-jsonrpc.js")))
 #+end_src
 
-*** from ~melpa~ (in-progress)
-add melpa if not available
-#+begin_src elisp
-(require 'package)
-(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
-(package-initialize)
-#+end_src
+*** or from ~melpa~
+1. add melpa in init.el if not available
+   #+begin_src elisp
+   (require 'package)
+   (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+   (package-initialize)
+   #+end_src
 
-Code:
-#+begin_src elisp
-(package-refresh-contents)
-(package-install 'prettify-math)
-#+end_src
-
-Command:
-~M-x package-refresh-contents RET~
-~M-x package-install RET prettify-math RET~
+2. command:\\
+   ~M-x package-refresh-contents RET~\\
+   ~M-x package-install RET prettify-math RET~
 
 
 
 ** Usage
-enable ~prettify-math-mode~ in your buffer, or globally via ~global-prettify-math-mode~
+enable in one buffer: ~M-x prettify-math-mode RET~, or globally: ~M-x global-prettify-math-mode RET~
+
 
 ** Customization
 You can customize delimiter before this module loaded.
@@ -49,6 +44,7 @@ Code example in init.el:
 (require 'prettify-math)
 #+end_src
 
+
 ** Compare with other similar packges
 *** Similar packages:
 - [[https://gitlab.com/latex-math-preview/latex-math-preview][latex-math-preview]]
@@ -57,11 +53,8 @@ Code example in init.el:
 - [[https://github.com/TobiasZawada/texfrag][texfrag]]
 - [[https://gitlab.com/matsievskiysv/math-preview][math-preview]]
 
-*** Why prettify-math:
-- prettify-math implemented as minor mode, make it work in all major modes.
-- Above projects implemented base on overlay, while implementation in this package base on font-lock.
-  Which means:
-  - JIT render not pre-complete render.
-  - no manual overlay maintenance.
-  - only provide face info, no view & render operation.
+*** Pros of prettify-math:
+- Responsive style(foreground/background color, size) base on surrunding text.
+- JIT render instead of AOT render, which can support large files.
 - Not only to support latex math expression, but also asciimath expression, in future other may supported.
+- prettify-math implemented as minor mode, make it works in all major modes.
