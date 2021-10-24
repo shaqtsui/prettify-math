@@ -59,11 +59,9 @@ Code example in init.el:
 
 *** Why prettify-math:
 1. prettify-math implemented as minor mode, make it work in all major modes.
-
 2. Above projects implemented base on overlay, while implementation in this package base on font-lock.
-Which means:
-a. JIT render not pre-complete render.
-b. no manual overlay maintenance.
-c. only provide face info, no view & render operation.
-
+   Which means:
+   - JIT render not pre-complete render.
+   - no manual overlay maintenance.
+   - only provide face info, no view & render operation.
 3. Not only to support latex math expression, but also asciimath expression, in future other may supported.
