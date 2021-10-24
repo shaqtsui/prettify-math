@@ -364,7 +364,8 @@ As syntax class is mostly exclusive."
            (image-type-available-p 'svg))
       (if (or (file-exists-p (expand-file-name "package-lock.json" prettify-math--mathjax-workspace))
               (and (yes-or-no-p "Install node module: mathjax-full?")
-                   (equal 0 (prettify-math--ensure-mathjax))))
+                   (progn (prettify-math--ensure-mathjax)
+                          t)))
           (if prettify-math-mode
               (progn
                 (prettify-math--register-in-font-lock)
