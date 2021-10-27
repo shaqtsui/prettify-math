@@ -1,8 +1,10 @@
+#+OPTIONS: \n:t
+
 * Prettify math is a emacs minor mode to prettify math formulas.
 
 [[./prettify-math-demo.gif]]
 
-It's base on mathjax, refer mathjax for math formula related stuffs. Default math formula delimiters:\\
+It's base on mathjax, refer mathjax for math formula related stuffs. Default math formula delimiters:
 | ~`~  | inline asciimath |
 | ~``~ | block asciimath  |
 | ~$~  | inline latex     |
@@ -10,7 +12,7 @@ It's base on mathjax, refer mathjax for math formula related stuffs. Default mat
 
 
 ** Prerequisite
-~nodejs~ - used to run mathjax, simple installation refer: [[https://nodejs.dev/download/package-manager][Installing Node.js]]
+~nodejs~ - used to run mathjax, if not available simple installation refer: [[https://nodejs.dev/download/package-manager][Installing Node.js]]
 
 ** Installation
 *** via straight.el
@@ -26,14 +28,14 @@ It's base on mathjax, refer mathjax for math formula related stuffs. Default mat
    (package-initialize)
    #+end_src
 
-2. command:\\
-   ~M-x package-refresh-contents RET~\\
+2. command:
+   ~M-x package-refresh-contents RET~
    ~M-x package-install RET prettify-math RET~
 
 
 
 ** Usage
-enable in one buffer: ~M-x prettify-math-mode RET~, or globally: ~M-x global-prettify-math-mode RET~
+Enable in current buffer: ~M-x prettify-math-mode RET~, or globally: ~M-x global-prettify-math-mode RET~.
 
 
 ** Customization
@@ -50,8 +52,8 @@ Code example in init.el:
 #+end_src
 
 
-** Compare with other similar packges
-*** Similar packages:
+** Compare with existing similar packges
+*** Existing similar packages:
 - [[https://gitlab.com/latex-math-preview/latex-math-preview][latex-math-preview]]
 - [[https://github.com/aaptel/preview-latex][preview-latex(px)]]
 - [[https://github.com/yangsheng6810/org-latex-impatient][org-latex-impatient]]

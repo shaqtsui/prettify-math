@@ -1,5 +1,9 @@
 #!/usr/bin/env node -r esm
+// Author: Shaq Xu <shaqxu@163.com>
+// Maintainer: Shaq Xu <shaqxu@163.com>
+// Version: 1.0
 //const mathjax = require('mathjax-full/es5/node-main.js');
+
 const mathjax = require('mathjax-full/components/src/node-main/node-main.js');
 
 const rpc = require('vscode-jsonrpc');

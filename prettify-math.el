@@ -2,7 +2,7 @@
 
 ;; Author: Shaq Xu <shaqxu@163.com>
 ;; Maintainer: Shaq Xu <shaqxu@163.com>
-;; Version: 0.5
+;; Version: 1.0
 ;; Package-Requires: ((emacs "27.1") (dash "2.19.0") (s "1.12.0") (jsonrpc "1.0.9"))
 ;; Homepage: https://gitee.com/shaqxu/prettify-math
 ;; Keywords: math asciimath tex latex prettify mathjax
