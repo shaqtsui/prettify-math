@@ -39,9 +39,9 @@ Enable in current buffer: ~M-x prettify-math-mode RET~, or globally: ~M-x global
 
 
 ** Customization
-*** Customize prettify-math-default-scale for formula scale
+*** Customize ~prettify-math-default-scale~ for formula scale
 
-*** You can customize delimiter before this module loaded.
+*** Set delimiter before this module loaded.
 Code example in init.el:
 #+begin_src elisp
 (setq prettify-math-delimiters-alist
