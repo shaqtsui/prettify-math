@@ -4,6 +4,7 @@
 // Version: 1.0
 //const mathjax = require('mathjax-full/es5/node-main.js');
 
+// require path relative to current file not node execute directory
 const mathjax = require('mathjax-full/components/src/node-main/node-main.js');
 
 const rpc = require('vscode-jsonrpc');

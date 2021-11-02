@@ -60,12 +60,16 @@
 (require 'dom)
 (require 'svg)
 
+(defgroup prettify-math nil
+  "Prettify math related"
+  :group 'text
+  :prefix "prettify-math-")
+
 
 ;;;;;;;;;;;;;;;;;;; mathjax ;;;;;;;;;;;;;;;;;
 (defconst prettify-math--pkg-directory (expand-file-name (if load-file-name (file-name-directory load-file-name) "./")))
 
-(defconst prettify-math--mathjax-workspace (concat user-emacs-directory
-                                      ".prettify-math/"))
+(defconst prettify-math--mathjax-workspace prettify-math--pkg-directory)
 
 
 (defun prettify-math--ensure-mathjax ()
@@ -265,7 +269,7 @@ Base on OLD-POS to calculate texts when ACTION is entered, otherwise on point."
         (remove-text-properties s e '(focus-on))
         (font-lock-flush s e)))))
 
-
+(defcustom prettify-math-default-scale 1.5 "Math formula default scale." :type 'float)
 
 (defun prettify-math--facespec-fn ()
   "Property face only specified when its value non-nil.
@@ -282,7 +286,7 @@ Unfontify before fontify?"
                                 (prettify-math-type-by-delimiter-beg it)
                                 (prettify-math--mathexp-to-svg mathexp it)
                                 (prettify-math--to-dom it)
-                                (prettify-math--scale-svg it (*  1.5
+                                (prettify-math--scale-svg it (*  prettify-math-default-scale
                                                     (or (--> face-remapping-alist
                                                              (assoc-default 'default it)
                                                              (assoc-default :height it)

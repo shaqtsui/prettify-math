@@ -31,7 +31,8 @@
       (progn
         (prettify-math--ensure-mathjax)
         (should (file-exists-p (expand-file-name "package-lock.json" prettify-math--mathjax-workspace))))
-    (delete-directory prettify-math--mathjax-workspace t)))
+    (message "pls remove files")
+    ))
 
 (ert-deftest prettify-math-mjserver-test ()
   "mj server will exist after test, as sub process terminate"
