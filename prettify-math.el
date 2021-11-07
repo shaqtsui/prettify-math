@@ -97,8 +97,8 @@
     (let* ((default-directory prettify-math--mathjax-workspace)
            (p (make-process :name "mjserver"
                             :buffer "*mjserver*"
-                            :command `("node" "-r" "esm" ,(concat prettify-math--pkg-directory
-                                                                  "mathjax-jsonrpc.js"))
+                            :command `("node" "--preserve-symlinks-main" "-r" "esm" ,(concat prettify-math--pkg-directory
+                                                                                             "mathjax-jsonrpc.js"))
                             :connection-type 'pipe
                             ;;:stderr "*myjservererr*"
                             )))
