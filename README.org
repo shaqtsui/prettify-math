@@ -62,7 +62,8 @@ Code example in init.el:
 - [[https://github.com/TobiasZawada/texfrag][texfrag]]
 - [[https://gitlab.com/matsievskiysv/math-preview][math-preview]]
 
-*** Pros of prettify-math:
+*** why prettify-math:
+- on-fly image generate, no disk temp file
 - Responsive style(foreground/background color, size) base on surrunding text.
 - JIT render instead of AOT render, which can support large files.
 - Not only to support latex math expression, but also asciimath expression, in future other may supported.
