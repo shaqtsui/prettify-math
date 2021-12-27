@@ -1,6 +1,8 @@
 #+OPTIONS: \n:t
 
 * Prettify math is a emacs minor mode to prettify math formulas.
+Note this project current only support mac & linux, NOT windows as a bug in jsonrpc.
+
 
 [[./prettify-math-demo.gif]]
 
