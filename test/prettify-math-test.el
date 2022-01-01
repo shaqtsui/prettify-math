@@ -5,15 +5,35 @@
 
 ;;; Code:
 
-;; checkdoc
+;; checkdoc:
 ;; cask emacs --batch --file prettify-math.el --funcall checkdoc
 
-;; compile check
+;; compile check:
 ;; cask emacs --batch --funcall batch-byte-compile prettify-math.el
+;;
+;; ert runner:
+;; cask exec ert-runner
+;; 
+;; manual test:
+;; cask build
+;; cask install
+;; cask emacs -Q
 
 (ert-deftest prettify-math-load-test ()
   "file can be loaded?"
   (should (require 'prettify-math)))
+
+(ert-deftest prettify-math-replace-test ()
+  "replace test"
+  (require 'prettify-math)
+  (should (equal (prettify-math--update-attr "<test a=\"b\" cd=\"shaq\" />" "test" "cd" (lambda (x) "ddd"))
+                 "<test a=\"b\" cd=\"ddd\" />")))
+
+(ert-deftest prettify-math-scale-test ()
+  "scale svg test"
+  (require 'prettify-math)
+  (should (equal (prettify-math--scale-svg "<svg height=\"2em\" width=\"1px\" a=\"b\" cd=\"shaq\" />" 2)
+                 "<svg height=\"4em\" width=\"2px\" a=\"b\" cd=\"shaq\" />")))
 
 (ert-deftest prettify-math-facespec-test ()
   "facespec test"

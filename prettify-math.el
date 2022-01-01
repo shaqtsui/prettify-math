@@ -136,17 +136,29 @@
                        make-symbol)
                    exp))
 
-(defun prettify-math--to-dom (s)
-  "Convert S to dom, if required."
-  (with-temp-buffer
-    (insert s)
-    (libxml-parse-xml-region (point-min) (point-max))))
+;; WARNING: to-dom is buggy
+;; check GNU Emacs Lisp Reference Manual/parsing html and xml
+(defun prettify-math--update-attr (s node attr fn)
+  "FN update NODE ATTR of S."
+  (let ((rexp (concat "<" node "[^>]+" attr "=\"\\([^\"]*\\)\""))
+        (rexp2 (concat "\\(<" node "\\)"))
+        (rexp3 (concat "\\1 " attr "=\"\"")))
+    (save-match-data
+      (cond ((string-match rexp s) (replace-match (funcall fn (match-string 1 s))
+                                                  t t s 1))
+            ((string-match rexp2 s) (let ((s2 (replace-match rexp3
+                                                             t nil s)))
+                                      (string-match rexp s2)
+                                      (replace-match (funcall fn (match-string 1 s2))
+                                                     t t s2 1)))
+            (t s)))))
 
-(defun prettify-math--dom-update-attr (node attr fn)
-  "FN update NODE ATTR."
-  (dom-set-attribute node attr
-                     (funcall fn (dom-attr node attr))))
-
+;;(progn
+;;  (string-match "<svg[^>]+width=\"\\([^\"]*\\)\"" "<svg width=\"\" a=\"b\" cd=\"shaq\" />")
+;;  (match-string 1 "<svg width=\"\" a=\"b\" cd=\"shaq\" />"))
+;; (prettify-math--update-attr "<svg a=\"b\" cd=\"shaq\" />" "svg" "width" (lambda (x) (message x) (concat x "ddd")))
+;; (prettify-math--update-attr "<test a=\"b\" cd=\"shaq\" />" "test" "cd" (lambda (x) (message x) (concat x "ddd")))
+;; (prettify-math--update-attr "<test a=\"b\" cc=\"shaq\" />" "test" "cd" (lambda (x) "ddd"))
 
 (defun prettify-math--string-to-nu (s)
   "String S to number with unit."
@@ -170,25 +182,9 @@
   (let ((update-fn (-compose #'prettify-math--nu-to-string
                              (-rpartial #'prettify-math--scale-nu factor)
                              #'prettify-math--string-to-nu)))
-    (prettify-math--dom-update-attr svg 'width update-fn)
-    (prettify-math--dom-update-attr svg 'height update-fn)
-    svg))
-
-(defun prettify-math--ensure-defs (svg)
-  "Ensure defs available in SVG."
-  (or (dom-by-tag svg 'defs)
-      (--doto (dom-node 'defs)
-        (dom-add-child-before svg it)))
-  svg)
-
-(defun prettify-math--ensure-style (svg)
-  "Ensure style available in SVG."
-  (or (dom-by-tag svg 'style)
-      (progn (prettify-math--ensure-defs svg)
-             (--doto (dom-node 'style)
-               (dom-add-child-before (dom-by-tag svg 'defs)
-                                     it))))
-  svg)
+    (-> svg
+        (prettify-math--update-attr "svg" "width" update-fn)
+        (prettify-math--update-attr "svg" "height" update-fn))))
 
 (defun prettify-math--color-to-rgb (c)
   "Color C to #rgb."
@@ -282,19 +278,18 @@ Unfontify before fontify?"
         `(face highlight cursor-sensor-functions (prettify-math--update-focus-on)
                rear-nonsticky (cursor-sensor-functions))
       ;; scale not change resolution, so may blur image
-      `(face nil display (,(--> dlmt
-                                (prettify-math-type-by-delimiter-beg it)
-                                (prettify-math--mathexp-to-svg mathexp it)
-                                (prettify-math--to-dom it)
-                                (prettify-math--scale-svg it (*  prettify-math-default-scale
-                                                    (or (--> face-remapping-alist
-                                                             (assoc-default 'default it)
-                                                             (assoc-default :height it)
-                                                             car)
-                                                        1)))
-                                (-doto it
-                                  (dom-set-attribute 'color (prettify-math--color-to-rgb (foreground-color-at-point))))
-                                (svg-image it :ascent 'center)))
+      ;; display can also be a list of specification
+      `(face nil display ,(--> dlmt
+                               (prettify-math-type-by-delimiter-beg it)
+                               (prettify-math--mathexp-to-svg mathexp it)
+                               (prettify-math--scale-svg it (*  prettify-math-default-scale
+                                                                (or (--> face-remapping-alist
+                                                                         (assoc-default 'default it)
+                                                                         (assoc-default :height it)
+                                                                         car)
+                                                                    1)))
+                               (prettify-math--update-attr it "svg" "color" (lambda (_) (prettify-math--color-to-rgb (foreground-color-at-point))))
+                               (svg-image it :ascent 'center))
              cursor-sensor-functions (prettify-math--update-focus-on)
              rear-nonsticky (cursor-sensor-functions)))))
 
