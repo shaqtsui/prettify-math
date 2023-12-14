@@ -338,7 +338,9 @@ As syntax class is mostly exclusive."
   (setq pre-redisplay-functions (delq 'cursor-sensor--detect pre-redisplay-functions))
   (when (prettify-math-contains-block-delimiters-p)
     (setq font-lock-multiline t)
-    (add-hook 'font-lock-extend-region-functions #'prettify-math-extend-block-delimiter-region))
+    (add-hook 'font-lock-extend-region-functions
+              #'prettify-math-extend-block-delimiter-region
+              100 t))
   (font-lock-add-keywords nil prettify-math--keywords)
   (--> prettify-math--extra-properties
        (append it font-lock-extra-managed-props)
