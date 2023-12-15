@@ -19,7 +19,7 @@ It's base on mathjax, refer mathjax for math formula related stuffs. Default mat
 ** Installation
 *** via straight.el
 #+begin_src elisp
-(straight-use-package '(prettify-math :host nil :repo "https://gitee.com/shaqxu/prettify-math" :files (:defaults "mathjax-jsonrpc.js")))
+(straight-use-package '(prettify-math :host nil :repo "https://github.com/shaqtsui/prettify-math" :files (:defaults "mathjax-jsonrpc.js")))
 #+end_src
 
 *** or from ~melpa~
