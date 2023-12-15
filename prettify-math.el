@@ -1,7 +1,7 @@
 ;;; prettify-math.el --- Prettify math formula -*- lexical-binding: t -*-
 
-;; Author: Shaq Xu <shaqxu@163.com>
-;; Maintainer: Shaq Xu <shaqxu@163.com>
+;; Author: Shaq Tsui <shaqtsui@outlook.com>
+;; Maintainer: Shaq Tsui <shaqtsui@outlook.com>
 ;; Version: 1.0
 ;; Package-Requires: ((emacs "27.1") (dash "2.19.0") (s "1.12.0") (jsonrpc "1.0.9"))
 ;; Homepage: https://github.com/shaqxu/prettify-math
